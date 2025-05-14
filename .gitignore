@@ -1,0 +1,11 @@
+﻿################################################################################
+# Ten plik .gitignore został utworzony automatycznie przez Microsoft(R) Visual Studio.
+################################################################################
+
+/LangDiscord/appsettings.secret.local.json
+/LangDiscord/appsettings.local.json
+/LangDiscord/bin
+/LangDiscord/obj
+.vs
+/LangDiscord.Tests/bin
+/LangDiscord.Tests/obj

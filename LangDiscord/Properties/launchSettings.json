@@ -1,0 +1,16 @@
+{
+    "profiles": {
+        "Local": {
+            "commandName": "Project",
+            "environmentVariables": {
+                "ENVIRONMENT": "local"
+            }
+        },
+        "Development": {
+            "commandName": "Project",
+            "environmentVariables": {
+                "ENVIRONMENT": "dev"
+            }
+        }
+    }
+}
