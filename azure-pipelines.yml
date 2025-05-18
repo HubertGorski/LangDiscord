@@ -5,7 +5,7 @@ parameters:
 - name: buildImage
   type: boolean
   default: true
-- name: deploymentMode
+- name: Discord
   type: string
   default: Reinstall
   values:
