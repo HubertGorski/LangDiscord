@@ -1,0 +1,78 @@
+trigger:
+- main
+
+parameters:
+- name: buildImage
+  type: boolean
+  default: true
+- name: deploymentMode
+  type: string
+  default: Reinstall
+  values:
+    - Install
+    - Uninstall
+    - Reinstall
+
+variables:
+  imageName: 'langdiscord'
+  dockerRegistryServiceConnection: 'acr-connection'
+
+stages:
+# 1. TEST
+- stage: Test
+  displayName: Run Tests
+  jobs:
+  - job: RunTests
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        version: '9.0.x'
+        packageType: sdk
+    - script: |
+        dotnet restore
+        dotnet build --no-restore
+        dotnet test --no-build --verbosity normal
+      displayName: Run .NET Tests
+
+# 2. BUILD
+- stage: Build
+  displayName: Build and Push Docker Image
+  dependsOn: Test
+  condition: |
+    and(succeeded(), eq('${{ parameters.buildImage }}', true))
+  jobs:
+  - job: DockerBuild
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: '$(imageName)'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: |
+          latest
+
+# 3. DEPLOY
+- stage: Deploy
+  displayName: Deploy App
+  dependsOn: Build
+  jobs:
+  - job: DeployJob
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        echo "Deployment mode: ${{ parameters.deploymentMode }}"
+        if [[ '${{ parameters.deploymentMode }}' == 'Install' ]]; then
+          docker run -d -p 8080:80 langdiscord:latest
+        elif [[ '${{ parameters.deploymentMode }}' == 'Uninstall' ]]; then
+          docker rm -f $(docker ps -q --filter ancestor=langdiscord:latest)
+        elif [[ '${{ parameters.deploymentMode }}' == 'Reinstall' ]]; then
+          docker rm -f $(docker ps -q --filter ancestor=langdiscord:latest) || true
+          docker run -d -p 8080:80 langdiscord:latest
+        fi
+      displayName: "Run Docker Deployment"
