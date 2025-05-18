@@ -1,78 +1,100 @@
-trigger:
-- main
+name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.r)
 
-parameters:
-- name: buildImage
-  type: boolean
-  default: true
-- name: Discord
-  type: string
-  default: Reinstall
-  values:
-    - Install
-    - Uninstall
-    - Reinstall
+trigger:
+  branches:
+    include:
+      - main
 
 variables:
-  imageName: 'langdiscord'
-  dockerRegistryServiceConnection: 'acr-connection'
+  buildConfiguration: 'Release'
+  dotnetVersion: '9.0.x'
+
+parameters:
+- name: runTests
+  displayName: 'Run Tests?'
+  type: boolean
+  default: true
+- name: operation
+  displayName: 'Deployment Operation'
+  type: string
+  default: 'Reinstall'
+  values:
+  - 'Install'
+  - 'Uninstall'
+  - 'Reinstall'
 
 stages:
-# 1. TEST
-- stage: Test
-  displayName: Run Tests
+- stage: Build
+  displayName: 'Build Stage'
   jobs:
-  - job: RunTests
+  - job: BuildJob
+    displayName: 'Build .NET Application'
     pool:
-      vmImage: 'ubuntu-latest'
+      name: 'Discord'
     steps:
     - task: UseDotNet@2
+      displayName: 'Install .NET SDK'
       inputs:
-        version: '9.0.x'
-        packageType: sdk
-    - script: |
-        dotnet restore
-        dotnet build --no-restore
-        dotnet test --no-build --verbosity normal
-      displayName: Run .NET Tests
-
-# 2. BUILD
-- stage: Build
-  displayName: Build and Push Docker Image
-  dependsOn: Test
-  condition: |
-    and(succeeded(), eq('${{ parameters.buildImage }}', true))
-  jobs:
-  - job: DockerBuild
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-    - task: Docker@2
+        version: $(dotnetVersion)
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet Packages'
       inputs:
-        containerRegistry: '$(dockerRegistryServiceConnection)'
-        repository: '$(imageName)'
-        command: 'buildAndPush'
-        Dockerfile: '**/Dockerfile'
-        tags: |
-          latest
+        command: 'restore'
+        projects: '**/*.csproj'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Solution'
+      inputs:
+        command: 'build'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+        projects: '**/*.csproj'
 
-# 3. DEPLOY
-- stage: Deploy
-  displayName: Deploy App
+- stage: Test
+  displayName: 'Test Stage'
   dependsOn: Build
+  condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
+  jobs:
+  - job: TestJob
+    displayName: 'Run Unit Tests'
+    pool:
+      name: 'Discord'
+    steps:
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Tests'
+      inputs:
+        command: 'test'
+        arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
+        projects: '**/*Tests.csproj'
+    
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish Code Coverage'
+      inputs:
+        codeCoverageTool: 'Cobertura'
+        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+
+- stage: Deploy
+  displayName: 'Deployment Stage'
+  dependsOn: Test
+  condition: succeeded()
   jobs:
   - job: DeployJob
+    displayName: 'Deploy Application'
     pool:
-      vmImage: 'ubuntu-latest'
+      name: 'Discord'
     steps:
-    - script: |
-        echo "Deployment mode: ${{ parameters.deploymentMode }}"
-        if [[ '${{ parameters.deploymentMode }}' == 'Install' ]]; then
-          docker run -d -p 8080:80 langdiscord:latest
-        elif [[ '${{ parameters.deploymentMode }}' == 'Uninstall' ]]; then
-          docker rm -f $(docker ps -q --filter ancestor=langdiscord:latest)
-        elif [[ '${{ parameters.deploymentMode }}' == 'Reinstall' ]]; then
-          docker rm -f $(docker ps -q --filter ancestor=langdiscord:latest) || true
-          docker run -d -p 8080:80 langdiscord:latest
-        fi
-      displayName: "Run Docker Deployment"
+    - powershell: |
+        $operation = "${{ parameters.operation }}"
+        Write-Host "Executing operation: $operation"
+        
+        
+        if ($operation -eq "Install") {
+          Write-Host "Installing application..."
+        }
+        elseif ($operation -eq "Uninstall") {
+          Write-Host "Uninstalling application..."
+        }
+        elseif ($operation -eq "Reinstall") {
+          Write-Host "Reinstalling application..."
+        }
+      displayName: 'Execute Deployment Operation'
