@@ -46,8 +46,8 @@ stages:
     - task: DotNetCoreCLI@2
       displayName: 'Build Solution'
       env:
-       DISCORD_TOKEN: $(DISCORD_TOKEN)
-       DETECTLANG_API_KEY: $(DETECTLANG_API_KEY)
+       DISCORD_TOKEN: $(DiscordToken)
+       DETECTLANG_API_KEY: $(DetectLangApiKey)
       inputs:
         command: 'build'
         arguments: '--configuration $(buildConfiguration) --no-restore'
