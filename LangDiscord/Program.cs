@@ -29,8 +29,9 @@ namespace LangDiscord
                     var environment = Environment.GetEnvironmentVariable("ENVIRONMENT") ?? "Production";
                     builder
                         .SetBasePath(AppContext.BaseDirectory)
-                        .AddJsonFile($"appsettings.{environment}.json", optional: false)
-                        .AddJsonFile($"appsettings.secret.{environment}.json", optional: false);
+                        .AddJsonFile($"appsettings.{environment}.json", optional: true)
+                        .AddJsonFile($"appsettings.secret.{environment}.json", optional: true)
+                        .AddEnvironmentVariables();
                 })
                 .ConfigureServices((context, services) =>
                 {
