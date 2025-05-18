@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LotyDiscord\LangDiscord.csproj" />
+    <ProjectReference Include="..\LangDiscord\LangDiscord.csproj" />
   </ItemGroup>
 
   <ItemGroup>
