@@ -116,10 +116,7 @@ stages:
             if ($operation -eq "Install") {
               if (-not (ContainerExists)) {
                 Write-Host "Instaluję nowy kontener."
-                docker run -d --name langdiscord -p 8080:80 \
-                -e DiscordToken="$env:DISCORD_TOKEN" \
-                -e DetectLangApiKey="$env:DETECTLANG_API_KEY" \
-                $(image)
+                docker run -d --name langdiscord -p 8080:80 -e "DISCORD_TOKEN=$discordToken" -e "DETECTLANG_API_KEY=$detectLangApiKey" $image
 
               }
               else {
@@ -153,9 +150,8 @@ stages:
                 }
               }
               Write-Host "Uruchamiam nowy kontener."
-              docker run -d --name langdiscord -p 8080:80 \
-              -e DiscordToken="$env:DISCORD_TOKEN" \
-              -e DetectLangApiKey="$env:DETECTLANG_API_KEY" \
-              $(image)
-             }
-             displayName: 'Uruchom kontener'
+              docker run -d --name langdiscord -p 8080:80 -e "DISCORD_TOKEN=$discordToken" -e "DETECTLANG_API_KEY=$detectLangApiKey" $image
+             displayName: 'Docker run - uruchomienie aplikacji'
+             env:
+              DISCORD_TOKEN: $(DiscordToken)
+              DETECTLANG_API_KEY: $(DetectLangApiKey)
