@@ -88,50 +88,53 @@ stages:
     - Build
   condition: succeeded('Test')
   jobs:
-  - job: DockerDeployment
-    steps:
-    - bash: |
-        set -e
-
-        operation="$(deploymentAction)"
-        echo "Wybrana operacja: $operation"
-
-        image="${imageName}:${imageTag}"
-        container_name="langdiscord"
-
-        container_exists=$(docker ps -a --format '{{.Names}}' | grep -w "$container_name" || true)
-
-        if [[ "$operation" == "Install" ]]; then
-          if [[ -z "$container_exists" ]]; then
-            echo "Instalujê nowy kontener."
-            docker run -d --name "$container_name" -p 8080:80 \
-              -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.secret.local.json:/app/appsettings.secret.local.json" \
-              "$image"
-          else
-            echo "Kontener ju¿ istnieje, nic nie robiê."
-          fi
-
-        elif [[ "$operation" == "Uninstall" ]]; then
-          if [[ -n "$container_exists" ]]; then
-            echo "Usuwam kontener."
-            docker rm -f "$container_name"
-          else
-            echo "Kontener nie istnieje, nic do usuniêcia."
-          fi
-
-        elif [[ "$operation" == "Reinstall" ]]; then
-          if [[ -n "$container_exists" ]]; then
-            echo "Usuwam istniej¹cy kontener."
-            docker rm -f "$container_name"
-          fi
-          echo "Uruchamiam nowy kontener."
-          docker run -d --name "$container_name" -p 8080:80 \
-            -e DiscordToken="$(DiscordToken)" \
-            -e DetectLangApiKey="$(DetectLangApiKey)" \
-            "$image"
-        else
-          echo "Nieznana operacja: $operation"
-          exit 1
-        fi
+    - job: DockerDeployment
       displayName: 'Zarz¹dzanie kontenerem Dockera'
-      shell: bash
+      pool:
+        name: 'Discord'
+      steps:
+        - bash: |
+            set -e
+
+            operation="$(deploymentAction)"
+            echo "Wybrana operacja: $operation"
+
+            image="${imageName}:${imageTag}"
+            container_name="langdiscord"
+
+            container_exists=$(docker ps -a --format '{{.Names}}' | grep -w "$container_name" || true)
+
+            if [[ "$operation" == "Install" ]]; then
+              if [[ -z "$container_exists" ]]; then
+                echo "Instalujê nowy kontener."
+                docker run -d --name "$container_name" -p 8080:80 \
+                  -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.secret.local.json:/app/appsettings.secret.local.json" \
+                  "$image"
+              else
+                echo "Kontener ju¿ istnieje, nic nie robiê."
+              fi
+
+            elif [[ "$operation" == "Uninstall" ]]; then
+              if [[ -n "$container_exists" ]]; then
+                echo "Usuwam kontener."
+                docker rm -f "$container_name"
+              else
+                echo "Kontener nie istnieje, nic do usuniêcia."
+              fi
+
+            elif [[ "$operation" == "Reinstall" ]]; then
+              if [[ -n "$container_exists" ]]; then
+                echo "Usuwam istniej¹cy kontener."
+                docker rm -f "$container_name"
+              fi
+              echo "Uruchamiam nowy kontener."
+              docker run -d --name "$container_name" -p 8080:80 \
+                -e DiscordToken="$(DiscordToken)" \
+                -e DetectLangApiKey="$(DetectLangApiKey)" \
+                "$image"
+            else
+              echo "Nieznana operacja: $operation"
+              exit 1
+            fi
+          displayName: 'Zarz¹dzanie kontenerem'
+          shell: bash
