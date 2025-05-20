@@ -48,6 +48,11 @@ stages:
           displayName: 'SprawdŸ formatowanie kodu (linter)'
 
         - script: |
+            echo {} > LangDiscord/appsettings.local.json
+            echo {} > LangDiscord/appsettings.secret.local.json
+          displayName: 'Utwórz puste pliki konfiguracyjne'
+
+        - script: |
             dotnet restore LangDiscord.Tests/LangDiscord.Tests.csproj
             dotnet build LangDiscord.Tests/LangDiscord.Tests.csproj --configuration $(buildConfiguration) --no-restore
             dotnet test LangDiscord.Tests/LangDiscord.Tests.csproj --configuration $(buildConfiguration) --no-build --verbosity normal
