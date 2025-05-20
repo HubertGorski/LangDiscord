@@ -75,7 +75,7 @@ stages:
             version: $(dotnetVersion)
 
         - script: |
-            docker build -t $(imageName):$(imageTag) .
+            docker build -t "$(imageName):$(imageTag)" .
           displayName: 'Zbuduj obraz Dockera'
 
 # ---------- STAGE: DEPLOY ----------
@@ -91,6 +91,16 @@ stages:
       pool:
         name: 'Discord'
       steps:
+        - task: DownloadSecureFile@1
+          name: downloadSecretFile
+          inputs:
+           secureFile: appsettings.local.json
+          displayName: 'Pobierz appsettings.local.json z Secure Files'
+
+        - script: |
+            cp "$(downloadSecretFile.secureFilePath)" LangDiscord/appsettings.local.json
+          displayName: 'Skopiuj plik do projektu'
+
         - powershell: |
             $operation = '${{ parameters.deploymentAction }}'
             Write-Host "Wybrana operacja: $operation"
@@ -105,7 +115,12 @@ stages:
             if ($operation -eq "Install") {
               if (-not (ContainerExists)) {
                 Write-Host "Instalujê nowy kontener."
-                docker run -d --name langdiscord -p 8080:80 $image
+                docker run -d --name langdiscord -p 8080:80 `
+                -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.local.json:/app/appsettings.local.json" `
+                -e DISCORD_TOKEN=$(DiscordToken) `
+                -e DETECTLANG_API_KEY=$(DetectLangApiKey) `
+                $image
+
               }
               else {
                 Write-Host "Kontener ju¿ istnieje, nic nie robiê."
@@ -138,8 +153,12 @@ stages:
                 }
               }
               Write-Host "Uruchamiam nowy kontener."
-              docker run -d --name langdiscord -p 8080:80 $image
-            }
+              docker run -d --name langdiscord -p 8080:80 `
+                -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.local.json:/app/appsettings.local.json" `
+                -e DISCORD_TOKEN=$(DiscordToken) `
+                -e DETECTLANG_API_KEY=$(DetectLangApiKey) `
+                $image
+             }
           displayName: 'Docker run - uruchomienie aplikacji'
           env:
             DISCORD_TOKEN: $(DiscordToken)
