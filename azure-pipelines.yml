@@ -45,6 +45,7 @@ stages:
         - script: |
             dotnet tool restore
             dotnet format --verify-no-changes
+          workingDirectory: 'LangDiscord'
           displayName: 'Sprawdü formatowanie kodu (linter)'
 
         - script: |
