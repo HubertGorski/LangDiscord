@@ -50,7 +50,7 @@ stages:
         - script: |
             dotnet restore
             dotnet build --configuration $(buildConfiguration) --no-restore
-            dotnet test --configuration $(buildConfiguration) --no-build --verbosity normal
+            dotnet test LangDiscord.Tests/LangDiscord.Tests.csproj --configuration $(buildConfiguration) --no-build --verbosity normal
           displayName: 'Testy jednostkowe'
 
 # ---------- STAGE: BUILD ----------
