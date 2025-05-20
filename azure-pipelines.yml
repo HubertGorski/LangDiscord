@@ -22,7 +22,7 @@ parameters:
 
 variables:
   buildConfiguration: 'Release'
-  dotnetVersion: '9.0.x'
+  dotnetVersion: '8.0.x'
   imageName: 'langdiscord'
   imageTag: 'latest'
 
