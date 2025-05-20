@@ -148,6 +148,10 @@ stages:
                 }
               }
               Write-Host "Uruchamiam nowy kontener."
+              
+              Write-Host "DISCORD_TOKEN = '$env:DISCORD_TOKEN'"
+              Write-Host "DETECTLANG_API_KEY = '$env:DETECTLANG_API_KEY'"
+
               docker run -d --name langdiscord -p 8080:80 -e DISCORD_TOKEN=$env:DISCORD_TOKEN -e DETECTLANG_API_KEY=$env:DETECTLANG_API_KEY $image
              }
           displayName: 'Docker run - uruchomienie aplikacji'
