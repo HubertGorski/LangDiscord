@@ -9,7 +9,7 @@ parameters:
   - name: buildImage
     type: boolean
     default: true
-    displayName: 'Czy budowaæ obraz Dockera?'
+    displayName: 'Czy budowaÄ‡ obraz Dockera?'
 
   - name: deploymentAction
     type: string
@@ -47,12 +47,12 @@ stages:
         - script: |
             dotnet tool restore
             dotnet format LangDiscord/LangDiscord.csproj --verify-no-changes
-          displayName: 'SprawdŸ formatowanie kodu (linter)'
+          displayName: 'SprawdÅº formatowanie kodu (linter)'
 
         - script: |
             echo {} > LangDiscord/appsettings.local.json
             echo {} > LangDiscord/appsettings.secret.local.json
-          displayName: 'Utwórz puste pliki konfiguracyjne'
+          displayName: 'UtwÃ³rz puste pliki konfiguracyjne'
 
         - script: |
             dotnet restore LangDiscord.Tests/LangDiscord.Tests.csproj
@@ -89,14 +89,14 @@ stages:
   condition: succeeded('Test')
   jobs:
     - job: DockerDeployment
-      displayName: 'Zarz¹dzanie kontenerem Dockera'
+      displayName: 'ZarzÄ…dzanie kontenerem Dockera'
       pool:
         name: 'Discord'
       steps:
         - bash: |
             set -e
 
-            operation="$(deploymentAction)"
+            operation="${{ parameters.deploymentAction }}"
             echo "Wybrana operacja: $operation"
 
             image="${imageName}:${imageTag}"
@@ -106,12 +106,12 @@ stages:
 
             if [[ "$operation" == "Install" ]]; then
               if [[ -z "$container_exists" ]]; then
-                echo "Instalujê nowy kontener."
+                echo "InstalujÄ™ nowy kontener."
                 docker run -d --name "$container_name" -p 8080:80 \
                   -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.secret.local.json:/app/appsettings.secret.local.json" \
                   "$image"
               else
-                echo "Kontener ju¿ istnieje, nic nie robiê."
+                echo "Kontener juÅ¼ istnieje, nic nie robiÄ™."
               fi
 
             elif [[ "$operation" == "Uninstall" ]]; then
@@ -119,12 +119,12 @@ stages:
                 echo "Usuwam kontener."
                 docker rm -f "$container_name"
               else
-                echo "Kontener nie istnieje, nic do usuniêcia."
+                echo "Kontener nie istnieje, nic do usuniÄ™cia."
               fi
 
             elif [[ "$operation" == "Reinstall" ]]; then
               if [[ -n "$container_exists" ]]; then
-                echo "Usuwam istniej¹cy kontener."
+                echo "Usuwam istniejÄ…cy kontener."
                 docker rm -f "$container_name"
               fi
               echo "Uruchamiam nowy kontener."
@@ -136,5 +136,4 @@ stages:
               echo "Nieznana operacja: $operation"
               exit 1
             fi
-          displayName: 'Zarz¹dzanie kontenerem'
-          shell: bash
+          displayName: 'ZarzÄ…dzanie kontenerem'
