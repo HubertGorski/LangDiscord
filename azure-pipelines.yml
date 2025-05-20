@@ -25,8 +25,6 @@ variables:
   dotnetVersion: '8.0.x'
   imageName: 'langdiscord'
   imageTag: 'latest'
-  DiscordToken: $(DiscordToken)
-  DetectLangApiKey: $(DetectLangApiKey)
 
 stages:
 
@@ -88,53 +86,71 @@ stages:
     - Build
   condition: succeeded('Test')
   jobs:
-    - job: DockerDeployment
-      displayName: 'Zarz¹dzanie kontenerem Dockera'
+    - job: DeployJob
+      displayName: 'Wdro¿enie aplikacji'
       pool:
         name: 'Discord'
       steps:
-        - bash: |
-            set -e
+        - task: DownloadSecureFile@1
+          name: downloadSecretFile
+          inputs:
+           secureFile: appsettings.secret.local.json
+          displayName: 'Pobierz appsettings.secret.local.json z Secure Files'
 
-            operation="$(deploymentAction)"
-            echo "Wybrana operacja: $operation"
+        - script: |
+            cp "$(downloadSecretFile.secureFilePath)" LangDiscord/appsettings.secret.local.json
+          displayName: 'Skopiuj plik do projektu'
 
-            image="${imageName}:${imageTag}"
-            container_name="langdiscord"
+        - powershell: |
+            $operation = '${{ parameters.deploymentAction }}'
+            Write-Host "Wybrana operacja: $operation"
 
-            container_exists=$(docker ps -a --format '{{.Names}}' | grep -w "$container_name" || true)
+            $image = "$(imageName):$(imageTag)"
 
-            if [[ "$operation" == "Install" ]]; then
-              if [[ -z "$container_exists" ]]; then
-                echo "Instalujê nowy kontener."
-                docker run -d --name "$container_name" -p 8080:80 \
-                  -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.secret.local.json:/app/appsettings.secret.local.json" \
-                  "$image"
-              else
-                echo "Kontener ju¿ istnieje, nic nie robiê."
-              fi
+            function ContainerExists {
+              $exists = docker ps -a --format "{{.Names}}" | Where-Object { $_ -eq "langdiscord" }
+              return $exists -ne $null
+            }
 
-            elif [[ "$operation" == "Uninstall" ]]; then
-              if [[ -n "$container_exists" ]]; then
-                echo "Usuwam kontener."
-                docker rm -f "$container_name"
-              else
-                echo "Kontener nie istnieje, nic do usuniêcia."
-              fi
-
-            elif [[ "$operation" == "Reinstall" ]]; then
-              if [[ -n "$container_exists" ]]; then
-                echo "Usuwam istniej¹cy kontener."
-                docker rm -f "$container_name"
-              fi
-              echo "Uruchamiam nowy kontener."
-              docker run -d --name "$container_name" -p 8080:80 \
-                -e DiscordToken="$(DiscordToken)" \
-                -e DetectLangApiKey="$(DetectLangApiKey)" \
-                "$image"
-            else
-              echo "Nieznana operacja: $operation"
-              exit 1
-            fi
-          displayName: 'Zarz¹dzanie kontenerem'
-          shell: bash
+            if ($operation -eq "Install") {
+              if (-not (ContainerExists)) {
+                Write-Host "Instalujê nowy kontener."
+                docker run -d --name langdiscord -p 8080:80 -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.secret.local.json:/app/appsettings.secret.local.json" $image
+              }
+              else {
+                Write-Host "Kontener ju¿ istnieje, nic nie robiê."
+              }
+            }
+            elseif ($operation -eq "Uninstall") {
+              if (ContainerExists) {
+                Write-Host "Usuwam kontener."
+                try {
+                  docker rm -f langdiscord
+                }
+                catch {
+                  Write-Host "Nie uda³o siê usun¹æ kontenera."
+                  throw
+                }
+              }
+              else {
+                Write-Host "Kontener nie istnieje, nic do usuniêcia."
+              }
+            }
+            elseif ($operation -eq "Reinstall") {
+              if (ContainerExists) {
+                Write-Host "Usuwam istniej¹cy kontener."
+                try {
+                  docker rm -f langdiscord
+                }
+                catch {
+                  Write-Host "Nie uda³o siê usun¹æ kontenera."
+                  throw
+                }
+              }
+              Write-Host "Uruchamiam nowy kontener."
+              docker run -d --name langdiscord -p 8080:80 \
+              -e DiscordToken="$(DiscordToken)" \
+              -e DetectLangApiKey="$(DetectLangApiKey)" \
+              $(image)
+             }
+             displayName: 'Uruchom kontener'
