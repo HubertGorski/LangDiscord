@@ -94,11 +94,11 @@ stages:
         - task: DownloadSecureFile@1
           name: downloadSecretFile
           inputs:
-           secureFile: appsettings.local.json
-          displayName: 'Pobierz appsettings.local.json z Secure Files'
+           secureFile: appsettings.secret.local.json
+          displayName: 'Pobierz appsettings.secret.local.json z Secure Files'
 
         - script: |
-            cp "$(downloadSecretFile.secureFilePath)" LangDiscord/appsettings.local.json
+            cp "$(downloadSecretFile.secureFilePath)" LangDiscord/appsettings.secret.local.json
           displayName: 'Skopiuj plik do projektu'
 
         - powershell: |
@@ -115,7 +115,7 @@ stages:
             if ($operation -eq "Install") {
               if (-not (ContainerExists)) {
                 Write-Host "Instalujê nowy kontener."
-                docker run -d --name langdiscord -p 8080:80 -e DISCORD_TOKEN=$env:DISCORD_TOKEN -e DETECTLANG_API_KEY=$env:DETECTLANG_API_KEY $image
+                docker run -d --name langdiscord -p 8080:80 -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.secret.local.json:/app/appsettings.secret.local.json" $image
               }
               else {
                 Write-Host "Kontener ju¿ istnieje, nic nie robiê."
@@ -148,11 +148,9 @@ stages:
                 }
               }
               Write-Host "Uruchamiam nowy kontener."
-              Write-Host "DISCORD_TOKEN = $env:DISCORD_TOKEN"
-              Write-Host "DETECTLANG_API_KEY = $env:DETECTLANG_API_KEY"
+              docker run -d --name langdiscord -p 8080:80 -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.secret.local.json:/app/appsettings.secret.local.json" $image
 
-              docker run -d --name langdiscord -p 8080:80 -e DISCORD_TOKEN=$env:DISCORD_TOKEN -e DETECTLANG_API_KEY=$env:DETECTLANG_API_KEY $image
-             }
+            }
           displayName: 'Docker run - uruchomienie aplikacji'
           env:
             DISCORD_TOKEN: $(DiscordToken)
