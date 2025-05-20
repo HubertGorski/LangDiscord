@@ -152,5 +152,5 @@ stages:
               -e DiscordToken="$(DiscordToken)" \
               -e DetectLangApiKey="$(DetectLangApiKey)" \
               $(image)
-              }
+             }
              displayName: 'Uruchom kontener Dockera'
