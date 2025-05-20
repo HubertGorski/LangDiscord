@@ -30,40 +30,29 @@ stages:
 
 # ---------- STAGE: TEST ----------
 - stage: Test
-  displayName: 'Test Stage'
-  dependsOn: Build
-  condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
+  displayName: 'Etap: Test'
   jobs:
-  - job: TestJob
-    displayName: 'Run Unit Tests'
-    pool:
-      name: 'Discord'
-    steps:
-    - task: DotNetCoreCLI@2
-      displayName: 'Build Tests'
-      inputs:
-        command: 'build'
-        projects: 'LangDiscordTests/**/*Tests.csproj'
-        arguments: '--configuration $(buildConfiguration) --no-restore'
-    
-    - task: DotNetCoreCLI@2
-      displayName: 'Run Tests'
-      inputs:
-        command: 'test'
-        projects: 'LangDiscordTests/**/*Tests.csproj'
-        arguments: '--configuration $(buildConfiguration) --no-build --collect:"XPlat Code Coverage" --logger "trx"'
-    
-    - task: PublishTestResults@2
-      displayName: 'Publish Test Results'
-      inputs:
-        testResultsFormat: 'VSTest'
-        testResultsFiles: 'LangDiscordTests/TestResults/**/*.trx'
-    
-    - task: PublishCodeCoverageResults@1
-      displayName: 'Publish Code Coverage'
-      inputs:
-        codeCoverageTool: 'Cobertura'
-        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+    - job: TestJob
+      displayName: 'Testy i Linter'
+      pool:
+        name: 'Discord'
+      steps:
+        - task: UseDotNet@2
+          displayName: 'Zainstaluj .NET SDK'
+          inputs:
+            version: $(dotnetVersion)
+
+        - script: |
+            dotnet tool restore
+            dotnet format LangDiscord/LangDiscord.csproj --verify-no-changes
+          displayName: 'Sprawdü formatowanie kodu (linter)'
+
+        - script: |
+            dotnet restore
+            dotnet build --configuration $(buildConfiguration) --no-restore
+            dotnet test --configuration $(buildConfiguration) --no-build --verbosity normal
+          projects: 'LangDiscordTests/**/*.csproj'
+          displayName: 'Testy jednostkowe'
 
 # ---------- STAGE: BUILD ----------
 - stage: Build
