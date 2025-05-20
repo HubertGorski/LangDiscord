@@ -5,99 +5,104 @@ trigger:
     include:
       - main
 
+parameters:
+  - name: buildImage
+    type: boolean
+    default: true
+    displayName: 'Czy budowaæ obraz Dockera?'
+
+  - name: deploymentAction
+    type: string
+    default: 'Reinstall'
+    values:
+      - Install
+      - Uninstall
+      - Reinstall
+    displayName: 'Operacja deploymentu'
+
 variables:
   buildConfiguration: 'Release'
   dotnetVersion: '9.0.x'
-
-parameters:
-- name: runTests
-  displayName: 'Run Tests?'
-  type: boolean
-  default: true
-- name: operation
-  displayName: 'Deployment Operation'
-  type: string
-  default: 'Reinstall'
-  values:
-  - 'Install'
-  - 'Uninstall'
-  - 'Reinstall'
+  imageName: 'langdiscord'
+  imageTag: 'latest'
 
 stages:
-- stage: Build
-  displayName: 'Build Stage'
-  jobs:
-  - job: BuildJob
-    displayName: 'Build .NET Application'
-    pool:
-      name: 'Discord'
-    steps:
-    - task: UseDotNet@2
-      displayName: 'Install .NET SDK'
-      inputs:
-        version: $(dotnetVersion)
-    
-    - task: DotNetCoreCLI@2
-      displayName: 'Restore NuGet Packages'
-      inputs:
-        command: 'restore'
-        projects: '**/*.csproj'
-    
-    - task: DotNetCoreCLI@2
-      displayName: 'Build Solution'
-      env:
-       DISCORD_TOKEN: $(DiscordToken)
-       DETECTLANG_API_KEY: $(DetectLangApiKey)
-      inputs:
-        command: 'build'
-        arguments: '--configuration $(buildConfiguration) --no-restore'
-        projects: '**/*.csproj'
 
+# ---------- STAGE: TEST ----------
 - stage: Test
-  displayName: 'Test Stage'
-  dependsOn: Build
-  condition: and(succeeded(), eq(${{ parameters.runTests }}, true))
+  displayName: 'Etap: Test'
   jobs:
-  - job: TestJob
-    displayName: 'Run Unit Tests'
-    pool:
-      name: 'Discord'
-    steps:
-    - task: DotNetCoreCLI@2
-      displayName: 'Run Tests'
-      inputs:
-        command: 'test'
-        arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
-        projects: '**/*Tests.csproj'
-    
-    - task: PublishCodeCoverageResults@1
-      displayName: 'Publish Code Coverage'
-      inputs:
-        codeCoverageTool: 'Cobertura'
-        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+    - job: TestJob
+      displayName: 'Testy i Linter'
+      pool:
+        name: 'Discord'
+      steps:
+        - task: UseDotNet@2
+          displayName: 'Zainstaluj .NET SDK'
+          inputs:
+            version: $(dotnetVersion)
 
-- stage: Deploy
-  displayName: 'Deployment Stage'
+        - script: |
+            dotnet tool restore
+            dotnet format --verify-no-changes
+          displayName: 'SprawdŸ formatowanie kodu (linter)'
+
+        - script: |
+            dotnet restore
+            dotnet build --configuration $(buildConfiguration) --no-restore
+            dotnet test --configuration $(buildConfiguration) --no-build --verbosity normal
+          displayName: 'Testy jednostkowe'
+
+# ---------- STAGE: BUILD ----------
+- stage: Build
+  displayName: 'Etap: Build'
   dependsOn: Test
-  condition: succeeded()
+  condition: and(succeeded(), eq('${{ parameters.buildImage }}', true))
   jobs:
-  - job: DeployJob
-    displayName: 'Deploy Application'
-    pool:
-      name: 'Discord'
-    steps:
-    - powershell: |
-        $operation = "${{ parameters.operation }}"
-        Write-Host "Executing operation: $operation"
-        
-        
-        if ($operation -eq "Install") {
-          Write-Host "Installing application..."
-        }
-        elseif ($operation -eq "Uninstall") {
-          Write-Host "Uninstalling application..."
-        }
-        elseif ($operation -eq "Reinstall") {
-          Write-Host "Reinstalling application..."
-        }
-      displayName: 'Execute Deployment Operation'
+    - job: BuildJob
+      displayName: 'Budowanie obrazu Docker'
+      pool:
+        name: 'Discord'
+      steps:
+        - task: UseDotNet@2
+          displayName: 'Zainstaluj .NET SDK'
+          inputs:
+            version: $(dotnetVersion)
+
+        - script: |
+            docker build -t $(imageName):$(imageTag) .
+          displayName: 'Zbuduj obraz Dockera'
+
+# ---------- STAGE: DEPLOY ----------
+- stage: Deploy
+  displayName: 'Etap: Deploy'
+  dependsOn:
+    - Test
+    - Build
+  condition: succeeded('Test')
+  jobs:
+    - job: DeployJob
+      displayName: 'Wdro¿enie aplikacji'
+      pool:
+        name: 'Discord'
+      steps:
+        - powershell: |
+            $operation = '${{ parameters.deploymentAction }}'
+            Write-Host "Wybrana operacja: $operation"
+
+            $image = "$(imageName):$(imageTag)"
+
+            if ($operation -eq "Install") {
+              docker run -d --name langdiscord -p 8080:80 $image
+            }
+            elseif ($operation -eq "Uninstall") {
+              docker rm -f langdiscord
+            }
+            elseif ($operation -eq "Reinstall") {
+              docker rm -f langdiscord || Write-Host "Nie by³o dzia³aj¹cego kontenera"
+              docker run -d --name langdiscord -p 8080:80 $image
+            }
+          displayName: 'Docker run - uruchomienie aplikacji'
+          env:
+            DISCORD_TOKEN: $(DiscordToken)
+            DETECTLANG_API_KEY: $(DetectLangApiKey)
