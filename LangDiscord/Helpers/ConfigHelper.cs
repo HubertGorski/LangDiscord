@@ -42,7 +42,7 @@ namespace LangDiscord.Helpers
             var value = config[key]?.Trim();
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new ConfigurationException(key, "is missing or empty in configuration");
+                throw new ConfigurationException(config.ToString(), "is missing or empty in configuration");
             }
             return value;
         }
