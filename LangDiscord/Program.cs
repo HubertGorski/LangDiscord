@@ -28,7 +28,7 @@ namespace LangDiscord
                 {
                     builder
                         .SetBasePath(AppContext.BaseDirectory)
-                        .AddJsonFile($"appsettings.local.json", optional: false)
+                        .AddJsonFile($"appsettings.local.json", optional: true)
                         .AddJsonFile($"appsettings.secret.local.json", optional: false);
                 })
                 .ConfigureServices((context, services) =>
