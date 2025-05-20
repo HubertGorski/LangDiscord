@@ -89,6 +89,7 @@ stages:
     - job: DockerDeployment
       displayName: 'Zarządzanie kontenerem Dockera'
       pool:
+        vmImage: 'ubuntu-latest'
         name: 'Discord'
       steps:
       
