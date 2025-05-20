@@ -9,7 +9,7 @@ parameters:
   - name: buildImage
     type: boolean
     default: true
-    displayName: 'Czy budowaæ obraz Dockera?'
+    displayName: 'Czy budowaÄ‡ obraz Dockera?'
 
   - name: deploymentAction
     type: string
@@ -45,12 +45,12 @@ stages:
         - script: |
             dotnet tool restore
             dotnet format LangDiscord/LangDiscord.csproj --verify-no-changes
-          displayName: 'SprawdŸ formatowanie kodu (linter)'
+          displayName: 'SprawdÅº formatowanie kodu (linter)'
 
         - script: |
             echo {} > LangDiscord/appsettings.local.json
             echo {} > LangDiscord/appsettings.secret.local.json
-          displayName: 'Utwórz puste pliki konfiguracyjne'
+          displayName: 'UtwÃ³rz puste pliki konfiguracyjne'
 
         - script: |
             dotnet restore LangDiscord.Tests/LangDiscord.Tests.csproj
@@ -87,8 +87,9 @@ stages:
   condition: succeeded('Test')
   jobs:
     - job: DeployJob
-      displayName: 'Wdro¿enie aplikacji'
+      displayName: 'WdroÅ¼enie aplikacji'
       pool:
+        vmImage: 'ubuntu-latest'
         name: 'Discord'
       steps:
         - task: DownloadSecureFile@1
@@ -114,11 +115,11 @@ stages:
 
             if ($operation -eq "Install") {
               if (-not (ContainerExists)) {
-                Write-Host "Instalujê nowy kontener."
+                Write-Host "InstalujÄ™ nowy kontener."
                 docker run -d --name langdiscord -p 8080:80 -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.secret.local.json:/app/appsettings.secret.local.json" $image
               }
               else {
-                Write-Host "Kontener ju¿ istnieje, nic nie robiê."
+                Write-Host "Kontener juÅ¼ istnieje, nic nie robiÄ™."
               }
             }
             elseif ($operation -eq "Uninstall") {
@@ -128,22 +129,22 @@ stages:
                   docker rm -f langdiscord
                 }
                 catch {
-                  Write-Host "Nie uda³o siê usun¹æ kontenera."
+                  Write-Host "Nie udaÅ‚o siÄ™ usunÄ…Ä‡ kontenera."
                   throw
                 }
               }
               else {
-                Write-Host "Kontener nie istnieje, nic do usuniêcia."
+                Write-Host "Kontener nie istnieje, nic do usuniÄ™cia."
               }
             }
             elseif ($operation -eq "Reinstall") {
               if (ContainerExists) {
-                Write-Host "Usuwam istniej¹cy kontener."
+                Write-Host "Usuwam istniejÄ…cy kontener."
                 try {
                   docker rm -f langdiscord
                 }
                 catch {
-                  Write-Host "Nie uda³o siê usun¹æ kontenera."
+                  Write-Host "Nie udaÅ‚o siÄ™ usunÄ…Ä‡ kontenera."
                   throw
                 }
               }
