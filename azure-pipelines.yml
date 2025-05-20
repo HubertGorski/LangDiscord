@@ -97,14 +97,47 @@ stages:
 
             $image = "$(imageName):$(imageTag)"
 
+            function ContainerExists {
+              $exists = docker ps -a --format "{{.Names}}" | Where-Object { $_ -eq "langdiscord" }
+              return $exists -ne $null
+            }
+
             if ($operation -eq "Install") {
-              docker run -d --name langdiscord -p 8080:80 $image
+              if (-not (ContainerExists)) {
+                Write-Host "Instalujê nowy kontener."
+                docker run -d --name langdiscord -p 8080:80 $image
+              }
+              else {
+                Write-Host "Kontener ju¿ istnieje, nic nie robiê."
+              }
             }
             elseif ($operation -eq "Uninstall") {
-              docker rm -f langdiscord
+              if (ContainerExists) {
+                Write-Host "Usuwam kontener."
+                try {
+                  docker rm -f langdiscord
+                }
+                catch {
+                  Write-Host "Nie uda³o siê usun¹æ kontenera."
+                  throw
+                }
+              }
+              else {
+                Write-Host "Kontener nie istnieje, nic do usuniêcia."
+              }
             }
             elseif ($operation -eq "Reinstall") {
-              docker rm -f langdiscord || Write-Host "Nie by³o dzia³aj¹cego kontenera"
+              if (ContainerExists) {
+                Write-Host "Usuwam istniej¹cy kontener."
+                try {
+                  docker rm -f langdiscord
+                }
+                catch {
+                  Write-Host "Nie uda³o siê usun¹æ kontenera."
+                  throw
+                }
+              }
+              Write-Host "Uruchamiam nowy kontener."
               docker run -d --name langdiscord -p 8080:80 $image
             }
           displayName: 'Docker run - uruchomienie aplikacji'
