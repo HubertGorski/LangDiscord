@@ -29,7 +29,7 @@ namespace LangDiscord.Services
             }
             else
             {
-               await MessageHelper.SendMessageToUser(request.Message, handler.ErrorMessage);
+                await MessageHelper.SendMessageToUser(request.Message, handler.ErrorMessage);
             }
         }
 

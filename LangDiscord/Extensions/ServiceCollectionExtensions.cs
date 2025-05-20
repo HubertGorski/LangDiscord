@@ -18,7 +18,7 @@ namespace LangDiscord.Extensions
     {
         public static IServiceCollection AddCustomCaches(this IServiceCollection services, IConfiguration config)
         {
-            
+
             services.AddSingleton<IUserFavoriteTranslationCache>(_ =>
             new UserFavoriteTranslationCache(
                 ConfigHelper.GetCacheDuration(config, "CacheSettings:FavoriteTranslationCacheDuration"),
