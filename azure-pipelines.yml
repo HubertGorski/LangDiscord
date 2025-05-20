@@ -1,158 +1,73 @@
-name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.r)
-
+---
+name: '$(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.r)'
 trigger:
   branches:
     include:
-      - main
-
+      - 'main'
 parameters:
-  - name: buildImage
-    type: boolean
+  - name: 'buildImage'
+    type: 'boolean'
     default: true
     displayName: 'Czy budowaæ obraz Dockera?'
-
-  - name: deploymentAction
-    type: string
+  - name: 'deploymentAction'
+    type: 'string'
     default: 'Reinstall'
     values:
-      - Install
-      - Uninstall
-      - Reinstall
+      - 'Install'
+      - 'Uninstall'
+      - 'Reinstall'
     displayName: 'Operacja deploymentu'
-
 variables:
   buildConfiguration: 'Release'
   dotnetVersion: '8.0.x'
   imageName: 'langdiscord'
   imageTag: 'latest'
-  DiscordToken: $(DiscordToken)
-  DetectLangApiKey: $(DetectLangApiKey)
-
+  DiscordToken: '$(DiscordToken)'
+  DetectLangApiKey: '$(DetectLangApiKey)'
 stages:
-
-# ---------- STAGE: TEST ----------
-- stage: Test
-  displayName: 'Etap: Test'
-  jobs:
-    - job: TestJob
-      displayName: 'Testy i Linter'
-      pool:
-        name: 'Discord'
-      steps:
-        - task: UseDotNet@2
-          displayName: 'Zainstaluj .NET SDK'
-          inputs:
-            version: $(dotnetVersion)
-
-        - script: |
-            dotnet tool restore
-            dotnet format LangDiscord/LangDiscord.csproj --verify-no-changes
-          displayName: 'SprawdŸ formatowanie kodu (linter)'
-
-        - script: |
-            echo {} > LangDiscord/appsettings.local.json
-            echo {} > LangDiscord/appsettings.secret.local.json
-          displayName: 'Utwórz puste pliki konfiguracyjne'
-
-        - script: |
-            dotnet restore LangDiscord.Tests/LangDiscord.Tests.csproj
-            dotnet build LangDiscord.Tests/LangDiscord.Tests.csproj --configuration $(buildConfiguration) --no-restore
-            dotnet test LangDiscord.Tests/LangDiscord.Tests.csproj --configuration $(buildConfiguration) --no-build --verbosity normal
-          displayName: 'Testy jednostkowe'
-
-# ---------- STAGE: BUILD ----------
-- stage: Build
-  displayName: 'Etap: Build'
-  dependsOn: Test
-  condition: and(succeeded(), eq('${{ parameters.buildImage }}', true))
-  jobs:
-    - job: BuildJob
-      displayName: 'Budowanie obrazu Docker'
-      pool:
-        name: 'Discord'
-      steps:
-        - task: UseDotNet@2
-          displayName: 'Zainstaluj .NET SDK'
-          inputs:
-            version: $(dotnetVersion)
-
-        - script: |
-            docker build -t "$(imageName):$(imageTag)" .
-          displayName: 'Zbuduj obraz Dockera'
-
-# ---------- STAGE: DEPLOY ----------
-- stage: Deploy
-  displayName: 'Etap: Deploy'
-  dependsOn:
-    - Test
-    - Build
-  condition: succeeded('Test')
-  jobs:
-    - job: DeployJob
-      displayName: 'Wdro¿enie aplikacji'
-      pool:
-        name: 'Discord'
-      steps:
-        - task: DownloadSecureFile@1
-          name: downloadSecretFile
-          inputs:
-           secureFile: appsettings.secret.local.json
-          displayName: 'Pobierz appsettings.secret.local.json z Secure Files'
-
-        - script: |
-            cp "$(downloadSecretFile.secureFilePath)" LangDiscord/appsettings.secret.local.json
-          displayName: 'Skopiuj plik do projektu'
-
-        - powershell: |
-            $operation = '${{ parameters.deploymentAction }}'
-            Write-Host "Wybrana operacja: $operation"
-
-            $image = "$(imageName):$(imageTag)"
-
-            function ContainerExists {
-              $exists = docker ps -a --format "{{.Names}}" | Where-Object { $_ -eq "langdiscord" }
-              return $exists -ne $null
-            }
-
-            if ($operation -eq "Install") {
-              if (-not (ContainerExists)) {
-                Write-Host "Instalujê nowy kontener."
-                docker run -d --name langdiscord -p 8080:80 -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.secret.local.json:/app/appsettings.secret.local.json" $image
-              }
-              else {
-                Write-Host "Kontener ju¿ istnieje, nic nie robiê."
-              }
-            }
-            elseif ($operation -eq "Uninstall") {
-              if (ContainerExists) {
-                Write-Host "Usuwam kontener."
-                try {
-                  docker rm -f langdiscord
-                }
-                catch {
-                  Write-Host "Nie uda³o siê usun¹æ kontenera."
-                  throw
-                }
-              }
-              else {
-                Write-Host "Kontener nie istnieje, nic do usuniêcia."
-              }
-            }
-            elseif ($operation -eq "Reinstall") {
-              if (ContainerExists) {
-                Write-Host "Usuwam istniej¹cy kontener."
-                try {
-                  docker rm -f langdiscord
-                }
-                catch {
-                  Write-Host "Nie uda³o siê usun¹æ kontenera."
-                  throw
-                }
-              }
-              Write-Host "Uruchamiam nowy kontener."
-              docker run -d --name langdiscord -p 8080:80 \
-              -e DiscordToken="$(DiscordToken)" \
-              -e DetectLangApiKey="$(DetectLangApiKey)" \
-              $(image)
-             }
-             displayName: 'Uruchom kontener Dockera'
+  - stage: 'Test'
+    displayName: 'Etap: Test'
+    jobs:
+      - job: 'TestJob'
+        displayName: 'Testy i Linter'
+        pool:
+          name: 'Discord'
+        steps:
+          - task: 'UseDotNet@2'
+            displayName: 'Zainstaluj .NET SDK'
+            inputs:
+              version: '$(dotnetVersion)'
+          - script: "dotnet tool restore\ndotnet format LangDiscord/LangDiscord.csproj --verify-no-changes\n"
+            displayName: 'SprawdŸ formatowanie kodu (linter)'
+          - script: "echo {} > LangDiscord/appsettings.local.json\necho {} > LangDiscord/appsettings.secret.local.json\n"
+            displayName: 'Utwórz puste pliki konfiguracyjne'
+          - script: "dotnet restore LangDiscord.Tests/LangDiscord.Tests.csproj\ndotnet build LangDiscord.Tests/LangDiscord.Tests.csproj --configuration $(buildConfiguration) --no-restore\ndotnet test LangDiscord.Tests/LangDiscord.Tests.csproj --configuration $(buildConfiguration) --no-build --verbosity normal\n"
+            displayName: 'Testy jednostkowe'
+  - stage: 'Build'
+    displayName: 'Etap: Build'
+    dependsOn: 'Test'
+    condition: 'and(succeeded(), eq(''${{ parameters.buildImage }}'', true))'
+    jobs:
+      - job: 'BuildJob'
+        displayName: 'Budowanie obrazu Docker'
+        pool:
+          name: 'Discord'
+        steps:
+          - task: 'UseDotNet@2'
+            displayName: 'Zainstaluj .NET SDK'
+            inputs:
+              version: '$(dotnetVersion)'
+          - script: "docker build -t \"$(imageName):$(imageTag)\" .\n"
+            displayName: 'Zbuduj obraz Dockera'
+  - stage: 'Deploy'
+    displayName: 'Etap: Deploy'
+    dependsOn:
+      - 'Test'
+      - 'Build'
+    condition: 'succeeded(''Test'')'
+    jobs:
+      - job: 'DockerDeployment'
+        steps:
+          - bash: "set -e\n\noperation=\"$(deploymentAction)\"\necho \"Wybrana operacja: $operation\"\n\nimage=\"${imageName}:${imageTag}\"\ncontainer_name=\"langdiscord\"\n\ncontainer_exists=$(docker ps -a --format '{{.Names}}' | grep -w \"$container_name\" || true)\n\nif [[ \"$operation\" == \"Install\" ]]; then\n  if [[ -z \"$container_exists\" ]]; then\n    echo \"Instalujê nowy kontener.\"\n    docker run -d --name \"$container_name\" -p 8080:80 \\\n      -v \"$(Build.SourcesDirectory)/LangDiscord/appsettings.secret.local.json:/app/appsettings.secret.local.json\" \\\n      \"$image\"\n  else\n    echo \"Kontener ju¿ istnieje, nic nie robiê.\"\n  fi\n\nelif [[ \"$operation\" == \"Uninstall\" ]]; then\n  if [[ -n \"$container_exists\" ]]; then\n    echo \"Usuwam kontener.\"\n    docker rm -f \"$container_name\"\n  else\n    echo \"Kontener nie istnieje, nic do usuniêcia.\"\n  fi\n\nelif [[ \"$operation\" == \"Reinstall\" ]]; then\n  if [[ -n \"$container_exists\" ]]; then\n    echo \"Usuwam istniej¹cy kontener.\"\n    docker rm -f \"$container_name\"\n  fi\n  echo \"Uruchamiam nowy kontener.\"\n  docker run -d --name \"$container_name\" -p 8080:80 \\\n    -e DiscordToken=\"$(DiscordToken)\" \\\n    -e DetectLangApiKey=\"$(DetectLangApiKey)\" \\\n    \"$image\"\nelse\n  echo \"Nieznana operacja: $operation\"\n  exit 1\nfi\n"
+            displayName: 'Zarz¹dzanie kontenerem Dockera'
+            shell: 'bash'
