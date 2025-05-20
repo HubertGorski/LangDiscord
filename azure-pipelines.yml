@@ -148,7 +148,7 @@ stages:
                 }
               }
               Write-Host "Uruchamiam nowy kontener."
-              docker run -d --name langdiscord -p 8080:80 -e "DISCORD_TOKEN=$env:DISCORD_TOKEN" -e "DETECTLANG_API_KEY=$env:DETECTLANG_API_KEY" -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.seret.local.json:/app/appsettings.secret.local.json" $image
+              docker run -d --name langdiscord -p 8080:80 -e "DISCORD_TOKEN=$env:DISCORD_TOKEN" -e "DETECTLANG_API_KEY=$env:DETECTLANG_API_KEY" -v "$(Build.SourcesDirectory)/LangDiscord/appsettings.secret.local.json:/app/appsettings.secret.local.json" $image
             }
           displayName: 'Docker run - uruchomienie aplikacji'
           env:
