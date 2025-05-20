@@ -25,6 +25,8 @@ variables:
   dotnetVersion: '8.0.x'
   imageName: 'langdiscord'
   imageTag: 'latest'
+  DiscordToken: $(DiscordToken)
+  DetectLangApiKey: $(DetectLangApiKey)
 
 stages:
 
