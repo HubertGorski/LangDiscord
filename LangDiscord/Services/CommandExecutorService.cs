@@ -19,7 +19,7 @@ namespace LangDiscord.Services
             Command? command = _commandExt.GetCommandFromString(request.CommandText);
             if (!command.HasValue || !_handlers.TryGetValue(command.Value, out var handler))
             {
-                await MessageHelper.SendMessageToUser(request.Message, "Błąd: Nieistniejąca komenda lub kod języka");
+                await MessageHelper.SendMessageToUser(request.Message, "Error: Invalid command or language code");
                 return;
             }
 

@@ -29,7 +29,7 @@ namespace LangDiscord.Facades
         {
             if (userRequest.Content == null)
             {
-                await MessageHelper.SendMessageToUser(userRequest.Message, "Coś poszło nie tak");
+                await MessageHelper.SendMessageToUser(userRequest.Message, "Something went wrong");
                 return;
             }
 
@@ -37,7 +37,7 @@ namespace LangDiscord.Facades
 
             if (detectedLang == null)
             {
-                await MessageHelper.SendMessageToUser(userRequest.Message, "Nie można wykryć języka. Sprawdz listę dostępnym języków za pomocą !langs");
+                await MessageHelper.SendMessageToUser(userRequest.Message, "❌ Language detection failed. Use `!langs` to see supported languages.");
                 return;
             }
 
@@ -74,10 +74,9 @@ namespace LangDiscord.Facades
             }
             else
             {
-                //TODO: uzywac tu serwisu
                 if (!_userFavoriteTranslationCache.TryGetFavoriteTranslation(userRequest.UserId, userRequest.CommandText, out var translation, out var dictKey) || translation == null)
                 {
-                    await MessageHelper.SendMessageToUser(userRequest.Message, "Nie posiadasz żadnych ulubionych zwrotów");
+                    await MessageHelper.SendMessageToUser(userRequest.Message, "🌟 No favorites yet! Save phrases with reactions or commands.");
                     return;
                 }
 

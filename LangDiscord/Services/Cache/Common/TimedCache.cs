@@ -101,7 +101,7 @@ namespace LangDiscord.Services.Cache.Common
         public int Count => _storage.Count;
         public void Clear() => _storage.Clear();
 
-        //TODO: Zoptymalizować, zrobić bezpieczniej
+        //TODO: https://dev.azure.com/hubertgorski181/HubProjects/_workitems/edit/3/
         public bool TryGetRandomByPartialKey<TPartial>(TPartial partialKey, Func<TKey, TPartial, bool> keyMatcher, out TValue? value, out TKey? fullKey)
         {
             var now = DateTime.UtcNow;

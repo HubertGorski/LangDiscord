@@ -20,10 +20,10 @@ namespace LangDiscord.Helpers
             if (isFavoriteMessage)
             {
                 var button = new ComponentBuilder()
-                    .WithButton("🗑️ Usuń z ulubionych", $"remove_fav:{message.Author.Id}", ButtonStyle.Primary)
+                    .WithButton("🗑️ Remove from favorites", $"remove_fav:{message.Author.Id}", ButtonStyle.Primary)
                     .Build();
-                var sentMessage2 = await message.Channel.SendMessageAsync($"[{message.Author.GlobalName}] - {text}", components: button);
-                return sentMessage2.Id;
+                var sentFavoriteMessage = await message.Channel.SendMessageAsync($"[{message.Author.GlobalName}] - {text}", components: button);
+                return sentFavoriteMessage.Id;
             }
 
             var sentMessage = await message.Channel.SendMessageAsync($"[{message.Author.GlobalName}] - {text}");

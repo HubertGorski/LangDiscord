@@ -25,14 +25,14 @@ namespace LangDiscord.Handlers
         {
             LanguageUsersSettings settings = _userSettingsCache.GetUserSettings(request.UserId);
 
-            await MessageHelper.SendMessageToUser(request.Message, $"Język główny: {settings.MainLanguage}; " +
-                $"Ulubiony język: {settings.FavoriteLanguage}");
+            await MessageHelper.SendMessageToUser(request.Message, $"Main language: {settings.MainLanguage}; " +
+                $"Favorite language: {settings.FavoriteLanguage}");
         }
 
         public string ErrorMessage
-            => "Błąd: Ta komenda nie wymaga dodatkowych parametrów";
+            => "Error: This command doesn't require additional parameters";
 
         public string HelpMessage
-            => "`!config` - Wyświetla aktualne ustawienia: język główny (domyślny), ulubiony język (do szybkich tłumaczeń)";
+            => "`!config` - Displays current settings: main language (default), favorite language (for quick translations)";
     }
 }

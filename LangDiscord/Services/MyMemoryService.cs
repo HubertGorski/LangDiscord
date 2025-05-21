@@ -31,7 +31,7 @@ namespace LangDiscord.Services
 
             if (translatedText == null)
             {
-                return "Błąd w tłumaczeniu";
+                return "Translation mistake";
             }
 
             return translatedText;

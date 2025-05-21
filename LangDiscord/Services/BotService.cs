@@ -56,44 +56,23 @@ namespace LangDiscord.Services
             await _client.LoginAsync(TokenType.Bot, _discordData.Token);
             await _client.StartAsync();
 
-            // Czekaj aż klient będzie gotowy, by zarejestrować komendy
             _client.Ready += async () =>
             {
-                try
-                {
-                    // Rejestracja komend dla serwera (guild)
-                    if (_discordData.ChannelId != 0)
-                    {
-                        await _commands.RegisterCommandsToGuildAsync(_discordData.ChannelId);
-                    }
-                    else
-                    {
-                        // Jeśli ChannelId nie jest ustawiony, rejestrujemy komendy globalnie
-                        await _commands.RegisterCommandsGloballyAsync();
-                    }
-                }
-                catch (HttpException ex)
-                {
-                    Console.WriteLine($"❌ Wystąpił błąd podczas rejestracji komend: {ex.Message}");
-                }
+                await _commands.RegisterCommandsToGuildAsync(_discordData.ChannelId);
             };
 
             _client.InteractionCreated += async (SocketInteraction interaction) =>
             {
-                // Obsługuje tylko interakcje z przyciskami
                 if (interaction is SocketMessageComponent component)
                 {
-                    // Obsługa kliknięcia przycisku
                     await HandleButtonInteraction(component);
                 }
                 else
                 {
-                    // Obsługuje inne interakcje (komendy itp.)
                     var context = new SocketInteractionContext(_client, interaction);
                     await _commands.ExecuteCommandAsync(context, null);
                 }
             };
-
 
             await Task.Delay(-1);
         }
@@ -165,21 +144,19 @@ namespace LangDiscord.Services
             }
         }
 
-        //TODO: przerzucic do utils
+        //TODO: https://dev.azure.com/hubertgorski181/HubProjects/_workitems/edit/1
         public static T DeepClone<T>(T obj)
         {
             string json = JsonSerializer.Serialize(obj);
             return JsonSerializer.Deserialize<T>(json);
         }
 
-
-
         private async Task HandleButtonInteraction(SocketMessageComponent component)
         {
             var customIdParts = component.Data.CustomId.Split(":");
             if (customIdParts.Length < 2)
             {
-                await component.RespondAsync("❌ Błąd w danych przycisku!", ephemeral: true);
+                await component.RespondAsync("❌ Button data error!", ephemeral: true);
                 return;
             }
 
@@ -191,7 +168,7 @@ namespace LangDiscord.Services
 
                 if (component.User.Id != userId)
                 {
-                    await component.RespondAsync("❌ Nie możesz tego zrobić!", ephemeral: true);
+                    await component.RespondAsync("❌ You can't do this!", ephemeral: true);
                     return;
                 }
 
@@ -200,17 +177,15 @@ namespace LangDiscord.Services
 
                     await component.UpdateAsync(x =>
                     {
-                        x.Content = "✅ Usunięto z ulubionych!";
-                        x.Components = new ComponentBuilder().Build(); // Usuń przyciski
+                        x.Content = "✅ Removed from favorites!";
+                        x.Components = new ComponentBuilder().Build();
                     });
                 }
             }
             else
             {
-                await component.RespondAsync("❌ Nieznana akcja!", ephemeral: true);
+                await component.RespondAsync("❌ Unknown action!", ephemeral: true);
             }
         }
-
-
     }
 }

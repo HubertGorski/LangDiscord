@@ -24,7 +24,7 @@ namespace LangDiscord.Services
             {
                 if (await _discordClient.GetChannelAsync(_discordData.ChannelId) is not SocketTextChannel channel)
                 {
-                    Console.WriteLine("Kanał nie istnieje lub nie jest kanałem tekstowym");
+                    Console.WriteLine("Channel does not exist or is not a text channel"); // TODO: https://dev.azure.com/hubertgorski181/HubProjects/_workitems/edit/2
                     return null;
                 }
 
@@ -32,7 +32,7 @@ namespace LangDiscord.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Błąd podczas pobierania wiadomości: {ex.Message}");
+                Console.WriteLine($"Message retrieval error: {ex.Message}");
                 return null;
             }
         }
@@ -43,13 +43,13 @@ namespace LangDiscord.Services
 
             if (message == null)
             {
-                Console.WriteLine("Nie znaleziono wiadomości");
+                Console.WriteLine("Message not found");
                 return;
             }
 
             if (message is not IUserMessage userMessage)
             {
-                Console.WriteLine("Wiadomość nie może być zmodyfikowana (nie jest IUserMessage)");
+                Console.WriteLine("Message cannot be edited");
                 return;
             }
 
@@ -61,19 +61,19 @@ namespace LangDiscord.Services
                     msg.Content = userMessage.Content;
                 });
 
-                Console.WriteLine($"Pomyślnie usunięto przyciski z wiadomości o ID: {message.Id}");
+                Console.WriteLine($"Successfully removed buttons from message with ID: {message.Id}");
             }
             catch (UnauthorizedAccessException)
             {
-                Console.WriteLine("Błąd: Brak uprawnień do modyfikacji wiadomości!");
+                Console.WriteLine("Error: No permission to modify the message!");
             }
             catch (HttpException httpEx) when (httpEx.DiscordCode == DiscordErrorCode.UnknownMessage)
             {
-                Console.WriteLine("Błąd: Wiadomość nie istnieje lub została usunięta!");
+                Console.WriteLine("This message doesn't exist or was removed!");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Nieoczekiwany błąd: {ex.GetType().Name}: {ex.Message}");
+                Console.WriteLine($"Unexpected error: {ex.GetType().Name}: {ex.Message}");
             }
         }
     }

@@ -23,13 +23,13 @@ namespace LangDiscord.Handlers
             => request.Content != null;
 
         public async Task ExecuteAsync(UserRequest request)
-        => await _translationFacade.HandleGetTranslateContent(request);
+            => await _translationFacade.HandleGetTranslateContent(request);
 
         public string ErrorMessage
-            => "Błąd: Nie można wyświetlić tłumaczenia. Brakuje tekstu.";
+             => "Error: Cannot display translation. Missing text input.";
 
         public string HelpMessage
-            => "`!! {text}` - Zwraca tłumaczenie podanego tekstu w języku głównym. " +
-                "Jeśli podany tekst jest w języku głównym, zwraca tłumaczenie w ulubionym języku.";
+            => "`!! {text}` - Returns translation of the given text in your main language. " +
+                "If the provided text is already in your main language, returns translation in your favorite language.";
     }
 }

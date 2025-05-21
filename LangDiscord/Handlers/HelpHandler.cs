@@ -29,22 +29,22 @@ namespace LangDiscord.Handlers
                               .GetServices<ICommandHandler>()
                               .Where(h => h.GetType() != typeof(HelpHandler));
 
-            var helpText = "\n# Dostępne komendy: \n" +
+            var helpText = "\n# Available commands: \n" +
                 HelpMessage + "\n" +
                 string.Join("\n\n",
                 handlers.Select(h => h.HelpMessage)) +
-                "\n \n`❤️` Dodanie reakcji serca do wiadomości zapisuje fiszkę w ulubionych." +
-                "\n## Legenda: \n" +
-                "`{langCode}` - Kod języka, np. pol, spa, eng. \n" +
-                "`{text}` - Tekst do przetłumaczenia \n";
+                "\n \n`❤️` Adding a heart reaction to a message saves it to favorites." +
+                "\n## Legend: \n" +
+                "`{langCode}` - Language code, e.g. pol, spa, eng \n" +
+                "`{text}` - Text to translate \n";
 
             await MessageHelper.SendMessageToUser(request.Message, helpText);
         }
 
         public string ErrorMessage
-            => "Błąd: Ta komenda nie wymaga dodatkowych parametrów";
+            => "Error: This command doesn't require additional parameters";
 
         public string HelpMessage
-            => "`!help` - Przedstawia wszystkie dozwolone komendy bota.";
+            => "`!help` - Displays all available bot commands.";
     }
 }

@@ -27,9 +27,9 @@ namespace LangDiscord.Handlers
             => _userLangSettingsFacade.TrySetLanguageAsync(request, true);
 
         public string ErrorMessage
-            => "Błąd: Podano niewłaściwy kod języka";
+            => "Error: Invalid language code provided";
 
         public string HelpMessage
-            => "`!main {langCode}` - Ustawia język główny (domyślny, ojczysty)";
+            => "`!main {langCode}` - Sets your main language (default/native language)";
     }
 }

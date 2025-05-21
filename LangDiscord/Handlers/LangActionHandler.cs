@@ -46,12 +46,12 @@ namespace LangDiscord.Handlers
         }
 
         public string ErrorMessage
-            => "Błąd: Podano niewłaściwy kod języka";
+            => "Error: Invalid language code provided";
 
         public string HelpMessage
-            => "`!{langCode} {text}` - Wyświetla tłumaczenie tekstu w podanym języku. \n" +
-                "`!{langCode}` - Wyświetla fiszkę o podanym języku a następnie oczekuje na odpowiedź. \n" +
-                "`!{langCode} u` - Wyświetla fiszkę z ulubionych o podanym języku a następnie oczekuje na odpowiedź. \n" +
-                "W odpowiedzi podaje tłumaczenie wpisanego tekstu w języku głównym.Jeśli tekst jest w języku głównym, podaje tłumaczenie w ulubionym języku.";
+            => "`!{langCode} {text}` - Translates text to the specified language. \n" +
+               "`!{langCode}` - Displays a flashcard in the given language and waits for your response. \n" +
+               "`!{langCode} u` - Displays a favorite flashcard in the given language and waits for your response. \n" +
+               "The response provides translation to your main language. If text is already in your main language, shows translation in your favorite language.";
     }
 }

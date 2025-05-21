@@ -24,10 +24,10 @@ namespace LangDiscord.Handlers
             await MessageHelper.SendMessageToUser(request.Message, answer);
         }
         public string ErrorMessage
-            => "Błąd: Ta komenda nie wymaga dodatkowych parametrów";
+            => "Error: This command doesn't accept additional parameters";
 
         public string HelpMessage
-            => "`!langs` - Wyświetla listę dostępnych języków";
+            => "`!langs` - Displays the list of available languages";
     }
 
 }

@@ -22,19 +22,19 @@ namespace LangDiscord.Facades
 
             if (langCode == null)
             {
-                await MessageHelper.SendMessageToUser(request.Message, "Błąd! Podano niepoprawny kod języka");
+                await MessageHelper.SendMessageToUser(request.Message, "Error! Invalid language code provided");
                 return false;
             }
 
             if (isMainLanguage && langCode == settings.FavoriteLanguageCode)
             {
-                await MessageHelper.SendMessageToUser(request.Message, "Błąd! Główny język nie może być taki sam jak ulubiony");
+                await MessageHelper.SendMessageToUser(request.Message, "Error! Main language cannot be the same as favorite language");
                 return false;
             }
 
             if (!isMainLanguage && langCode == settings.MainLanguageCode)
             {
-                await MessageHelper.SendMessageToUser(request.Message, "Błąd! Ulubiony język nie może być taki sam jak główny");
+                await MessageHelper.SendMessageToUser(request.Message, "Error! Favorite language cannot be the same as main language");
                 return false;
             }
 
@@ -45,10 +45,10 @@ namespace LangDiscord.Facades
 
             _userSettingsCache.AddOrUpdateSettings(request.UserId, settings);
 
-            var languageType = isMainLanguage ? "główny" : "ulubiony";
+            var languageType = isMainLanguage ? "main" : "favorite";
             await MessageHelper.SendMessageToUser(
                 request.Message,
-                $"Język {languageType} ustawiony na: {_langCodeConverter.GetLangFromCode(langCode)} ({langCode})");
+                $"{languageType} language set to: {_langCodeConverter.GetLangFromCode(langCode)} ({langCode})");
 
             return true;
         }
