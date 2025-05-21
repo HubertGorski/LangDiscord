@@ -9,7 +9,7 @@ parameters:
   - name: buildImage
     type: boolean
     default: true
-    displayName: 'Czy budować obraz Dockera?'
+    displayName: 'Build Docker image?'
 
   - name: deploymentAction
     type: string
@@ -18,7 +18,7 @@ parameters:
       - Install
       - Uninstall
       - Reinstall
-    displayName: 'Operacja deploymentu'
+    displayName: 'Deployment operation'
 
 variables:
   buildConfiguration: 'Release'
@@ -30,64 +30,64 @@ stages:
 
 # ---------- STAGE: TEST ----------
 - stage: Test
-  displayName: 'Etap: Test'
+  displayName: 'Stage: Test'
   jobs:
     - job: TestJob
-      displayName: 'Testy i Linter'
+      displayName: 'Tests and Linter'
       pool:
         name: 'Discord'
       steps:
         - task: UseDotNet@2
-          displayName: 'Zainstaluj .NET SDK'
+          displayName: 'Install .NET SDK'
           inputs:
             version: $(dotnetVersion)
 
         - script: |
             dotnet tool restore
             dotnet format LangDiscord/LangDiscord.csproj --verify-no-changes
-          displayName: 'Sprawdź formatowanie kodu (linter)'
+          displayName: 'Check code formatting (linter)'
 
         - script: |
             echo {} > LangDiscord/appsettings.local.json
             echo {} > LangDiscord/appsettings.secret.local.json
-          displayName: 'Utwórz puste pliki konfiguracyjne'
+          displayName: 'Create empty config files'
 
         - script: |
             dotnet restore LangDiscord.Tests/LangDiscord.Tests.csproj
             dotnet build LangDiscord.Tests/LangDiscord.Tests.csproj --configuration $(buildConfiguration) --no-restore
             dotnet test LangDiscord.Tests/LangDiscord.Tests.csproj --configuration $(buildConfiguration) --no-build --verbosity normal
-          displayName: 'Testy jednostkowe'
+          displayName: 'Unit tests'
 
 # ---------- STAGE: BUILD ----------
 - stage: Build
-  displayName: 'Etap: Build'
+  displayName: 'Stage: Build'
   dependsOn: Test
   condition: and(succeeded(), eq('${{ parameters.buildImage }}', true))
   jobs:
     - job: BuildJob
-      displayName: 'Budowanie obrazu Docker'
+      displayName: 'Build Docker image'
       pool:
         name: 'Discord'
       steps:
         - task: UseDotNet@2
-          displayName: 'Zainstaluj .NET SDK'
+          displayName: 'Install .NET SDK'
           inputs:
             version: $(dotnetVersion)
 
         - script: |
             docker build -t "$(imageName):$(imageTag)" .
-          displayName: 'Zbuduj obraz Dockera'
+          displayName: 'Build Docker image'
 
 # ---------- STAGE: DEPLOY ----------
 - stage: Deploy
-  displayName: 'Etap: Deploy'
+  displayName: 'Stage: Deploy'
   dependsOn:
     - Test
     - Build
   condition: succeeded('Test')
   jobs:
     - job: DeployJob
-      displayName: 'Wdrożenie aplikacji'
+      displayName: 'Application deployment'
       pool:
         name: 'Discord'
       steps:
@@ -95,22 +95,22 @@ stages:
           name: downloadSecretFile
           inputs:
             secureFile: appsettings.secret.local.json
-          displayName: 'Pobierz appsettings.secret.local.json z Secure Files'
+          displayName: 'Download appsettings.secret.local.json from Secure Files'
 
         - task: DownloadSecureFile@1
           name: downloadLocalFile
           inputs:
             secureFile: appsettings.local.json
-          displayName: 'Pobierz appsettings.local.json z Secure Files'
+          displayName: 'Download appsettings.local.json from Secure Files'
 
         - script: |
             cp "$(downloadSecretFile.secureFilePath)" LangDiscord/appsettings.secret.local.json
             cp "$(downloadLocalFile.secureFilePath)" LangDiscord/appsettings.local.json
-          displayName: 'Skopiuj pliki konfiguracyjne do projektu'
+          displayName: 'Copy config files to project'
 
         - powershell: |
             $operation = '${{ parameters.deploymentAction }}'
-            Write-Host "Wybrana operacja: $operation"
+            Write-Host "Selected operation: $operation"
 
             $image = "$(imageName):$(imageTag)"
 
@@ -121,43 +121,43 @@ stages:
 
             if ($operation -eq "Install") {
               if (-not (ContainerExists)) {
-                Write-Host "Instaluję nowy kontener."
-                docker run -d --name langdiscord -p 8080:80 -e "DISCORD_TOKEN=$env:DISCORD_TOKEN" -e "DETECTLANG_API_KEY=$env:DETECTLANG_API_KEY" $image
+                Write-Host "Installing new container."
+                docker run -d --name langdiscord -p 8080:80 -v "$(Build.SourcesDirectory)\LangDiscord\appsettings.secret.local.json:/app/appsettings.secret.local.json" -v "$(Build.SourcesDirectory)\LangDiscord\appsettings.local.json:/app/appsettings.local.json" $image
               }
               else {
-                Write-Host "Kontener już istnieje, nic nie robię."
+                Write-Host "Container already exists, doing nothing."
               }
             }
             elseif ($operation -eq "Uninstall") {
               if (ContainerExists) {
-                Write-Host "Usuwam kontener."
+                Write-Host "Removing container."
                 try {
                   docker rm -f langdiscord
                 }
                 catch {
-                  Write-Host "Nie udało się usunąć kontenera."
+                  Write-Host "Failed to remove container."
                   throw
                 }
               }
               else {
-                Write-Host "Kontener nie istnieje, nic do usunięcia."
+                Write-Host "Container does not exist, nothing to remove."
               }
             }
             elseif ($operation -eq "Reinstall") {
               if (ContainerExists) {
-                Write-Host "Usuwam istniejący kontener."
+                Write-Host "Removing existing container."
                 try {
                   docker rm -f langdiscord
                 }
                 catch {
-                  Write-Host "Nie udało się usunąć kontenera."
+                  Write-Host "Failed to remove container."
                   throw
                 }
               }
-              Write-Host "Uruchamiam nowy kontener."
-              docker run -d --name langdiscord -p 8080:80 -e "DISCORD_TOKEN=$env:DISCORD_TOKEN" -e "DETECTLANG_API_KEY=$env:DETECTLANG_API_KEY" -v "$(Build.SourcesDirectory)\LangDiscord\appsettings.secret.local.json:/app/appsettings.secret.local.json" -v "$(Build.SourcesDirectory)\LangDiscord\appsettings.local.json:/app/appsettings.local.json" $image
+              Write-Host "Starting new container."
+              docker run -d --name langdiscord -p 8080:80 -v "$(Build.SourcesDirectory)\LangDiscord\appsettings.secret.local.json:/app/appsettings.secret.local.json" -v "$(Build.SourcesDirectory)\LangDiscord\appsettings.local.json:/app/appsettings.local.json" $image
             }
-          displayName: 'Docker run - uruchomienie aplikacji'
+          displayName: 'Docker run - start application'
           env:
             DISCORD_TOKEN: $(DiscordToken)
             DETECTLANG_API_KEY: $(DetectLangApiKey)
