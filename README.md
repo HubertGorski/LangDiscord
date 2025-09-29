@@ -1,6 +1,5 @@
 ﻿# LangDiscord - Language Learning Discord Bot
 
-[![Build Status](https://dev.azure.com/hubertgorski181/HubProjects/_apis/build/status%2FHubProjects?branchName=main)](https://dev.azure.com/hubertgorski181/HubProjects/_build/latest?definitionId=1&branchName=main)
 
 ## Table of Contents
 - [Introduction](#introduction)
@@ -89,23 +88,37 @@ These should be placed in the LangDiscord/ directory. Minimal example:
 ## Available commands
 
 `!help` - Displays all available bot commands
+
 `!config` - Displays current settings
+
 `!! {text}` - Returns translation in main/favorite language
+
 `!{langCode} {text}` - Translates text to specified language
+
 `!{langCode}` - Displays a flashcard in given language
+
 `!{langCode} u` - Displays a favorite flashcard
+
 `!fav {langCode}` - Sets favorite language
+
 `!main {langCode}` - Sets main language
+
 `!langs` - Displays available languages
 
+
+
 ❤️ Adding a heart reaction to a message saves it to favorites.
+
 🗑️ Removing from favorites is done using the built-in button in the bot's message.
 
 ### Examples
 
 `User: !pol` - command entered by the user
-`Bot: Witaj Świecie!` - bot immediately responds with the first side of a flashcard
-* Waiting for any user response
-`User: Hello` - user's reply, does not need to be a correct translation
-`Bot: Hello World!` - correct translation
 
+`Bot: Witaj Świecie!` - bot immediately responds with the first side of a flashcard
+
+* Waiting for any user response
+
+`User: Hello` - user's reply, does not need to be a correct translation
+
+`Bot: Hello World!` - correct translation
