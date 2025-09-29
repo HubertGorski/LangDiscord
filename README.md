@@ -5,7 +5,7 @@
 - [Introduction](#introduction)
 - [Features](#features)
 - [Integrations](#integrations)
-- [Key Pipeline Stages](#build-and-deployment)
+- [Key Pipeline Stages](#key-pipeline-stages)
 - [Installation and configuration](#installation-and-configuration)
 - [Available commands](#available-commands)
 
@@ -122,3 +122,4 @@ These should be placed in the LangDiscord/ directory. Minimal example:
 `User: Hello` - user's reply, does not need to be a correct translation
 
 `Bot: Hello World!` - correct translation
+
