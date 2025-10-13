@@ -1,4 +1,5 @@
 ﻿# LangDiscord - Language Learning Discord Bot
+[![LangDiscord CI/CD](https://github.com/HubertGorski/LangDiscord/actions/workflows/langdiscord.yml/badge.svg)](https://github.com/HubertGorski/LangDiscord/actions/workflows/langdiscord.yml)
 
 
 ## Table of Contents
@@ -122,4 +123,5 @@ These should be placed in the LangDiscord/ directory. Minimal example:
 `User: Hello` - user's reply, does not need to be a correct translation
 
 `Bot: Hello World!` - correct translation
+
 
