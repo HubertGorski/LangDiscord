@@ -63,7 +63,6 @@ These should be placed in the LangDiscord/ directory. Minimal example:
 #### appsettings.local.json
 ```json
 {
-    "DiscordChannelId": "1354868876852199515",
     "CacheSettings": {
         "FavoriteTranslationCacheCleanupInterval": "6.00:0:00",
         "FavoriteTranslationCacheDuration": "6.00:00:00",
@@ -80,6 +79,7 @@ These should be placed in the LangDiscord/ directory. Minimal example:
 #### appsettings.secret.local.json
 ```json
 {
+    "DiscordChannelId": "1354868876852199515",
     "DiscordToken": "your-discord-token",
     "DetectLangApiKey": "your-detect-lang-api-key"
 }

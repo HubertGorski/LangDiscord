@@ -45,7 +45,7 @@ namespace LangDiscord
 
         private static void ConfigureServices(IServiceCollection services, IConfiguration config)
         {
-            services.AddSingleton<IConfiguration>(config);
+            services.AddSingleton(config);
             services.AddSingleton(ConfigHelper.GetDiscordData(config));
 
             services.AddCustomHttpClients();

@@ -1,0 +1,178 @@
+name: LangDiscord CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      deploymentAction:
+        description: 'Deployment operation'
+        required: true
+        default: Reinstall
+        type: choice
+        options:
+          - Install
+          - Uninstall
+          - Reinstall
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_TAG: latest
+  BUILD_CONFIG: Release
+  DOTNET_VERSION: 8.0.x
+
+jobs:
+  test:
+    name: Tests and Linter
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dotnet tools
+        run: dotnet tool restore
+
+      - name: Check code formatting (linter)
+        run: dotnet format LangDiscord/LangDiscord.csproj --verify-no-changes
+
+      - name: Create empty config files
+        run: |
+          echo {} > LangDiscord/appsettings.local.json
+          echo {} > LangDiscord/appsettings.secret.local.json
+
+      - name: Build and run tests
+        run: |
+          dotnet restore LangDiscord.Tests/LangDiscord.Tests.csproj
+          dotnet build LangDiscord.Tests/LangDiscord.Tests.csproj --configuration $BUILD_CONFIG --no-restore
+          dotnet test LangDiscord.Tests/LangDiscord.Tests.csproj --configuration $BUILD_CONFIG --no-build --verbosity normal
+
+  build:
+    name: Build and Push Docker image
+    runs-on: self-hosted
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Set lowercase image name
+        shell: bash
+        run: |
+          echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/langdiscord" >> $GITHUB_ENV
+          echo "Image name set to: ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/langdiscord"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          echo "Building image: ${IMAGE_NAME}:${IMAGE_TAG}"
+          docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" .
+
+      - name: Push Docker image
+        run: docker push "${IMAGE_NAME}:${IMAGE_TAG}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    name: Deploy Application
+    runs-on: self-hosted
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set lowercase image name
+        shell: bash
+        run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/langdiscord" >> $GITHUB_ENV
+
+      - name: Create config directory
+        run: mkdir -p config
+
+      - name: Check if all secrets are set
+        run: |
+          if [ -z "${{ secrets.DISCORD_TOKEN }}" ] || [ -z "${{ secrets.DETECTLANG_API_KEY }}" ]; then
+            echo "❌ Missing one or more required secrets"
+            exit 1
+          fi
+          echo "✅ All secrets are set"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create secret JSON
+        run: |
+          mkdir -p config
+          echo "{\"DiscordToken\":\"${{ secrets.DISCORD_TOKEN }}\",\"DetectLangApiKey\":\"${{ secrets.DETECTLANG_API_KEY }}\",\"DiscordChannelId\":\"${{ secrets.DISCORD_CHANNEL_ID }}\"}" > config/appsettings.secret.local.json
+
+      - name: Check if all secrets are set
+        run: |
+          if [ -z "${{ secrets.DISCORD_TOKEN }}" ] || [ -z "${{ secrets.DETECTLANG_API_KEY }}" ] || [ -z "${{ secrets.DISCORD_CHANNEL_ID }}" ]; then
+            echo "❌ Missing one or more required secrets"
+            exit 1
+          fi
+          echo "✅ All secrets are set"
+      
+      - name: Docker run - start application
+        shell: bash
+        env:
+          DEPLOY_ACTION: ${{ github.event.inputs.deploymentAction }}
+        run: |
+          operation="${DEPLOY_ACTION}"
+          image="${IMAGE_NAME}:${IMAGE_TAG}"
+          
+          echo "Deployment action: $operation"
+          echo "Using image: $image"
+          
+          docker pull $image
+
+          container_exists=$(docker ps -a --format "{{.Names}}" | grep -w langdiscord || true)
+
+          if [ "$operation" = "Install" ]; then
+            if [ -z "$container_exists" ]; then
+              echo "Installing new container."
+              docker run -d --name langdiscord -p 8080:80 \
+                -v "$(pwd)/config/appsettings.secret.local.json:/app/appsettings.secret.local.json" \
+                -e DISCORD_TOKEN="${{ secrets.DISCORD_TOKEN }}" \
+                -e DETECTLANG_API_KEY="${{ secrets.DETECTLANG_API_KEY }}" \
+                $image
+            else
+              echo "Container already exists, doing nothing."
+            fi
+          elif [ "$operation" = "Uninstall" ]; then
+            if [ -n "$container_exists" ]; then
+              echo "Removing container."
+              docker rm -f langdiscord
+            else
+              echo "Container does not exist, nothing to remove."
+            fi
+          elif [ "$operation" = "Reinstall" ]; then
+            if [ -n "$container_exists" ]; then
+              echo "Removing existing container."
+              docker rm -f langdiscord
+            fi
+            echo "Starting new container."
+            docker run -d --name langdiscord -p 8080:80 \
+              -v "$(pwd)/config/appsettings.secret.local.json:/app/appsettings.secret.local.json" \
+              -e DISCORD_TOKEN="${{ secrets.DISCORD_TOKEN }}" \
+              -e DETECTLANG_API_KEY="${{ secrets.DETECTLANG_API_KEY }}" \
+              $image
+          fi
